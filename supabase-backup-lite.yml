@@ -1,0 +1,72 @@
+# Backup Supabase Free Tier — Free Lite Version
+#
+# This is the FREE lite version of the Supabase Backup Kit.
+# It backs up a Supabase Free-tier database weekly to Cloudflare R2.
+# That is all it does — on purpose.
+#
+# What the lite version does NOT include (paid kit, $29 launch / $39):
+#   - No encryption (your dump is uploaded unencrypted — R2 is private,
+#     but anyone with your R2 credentials can read it)
+#   - No restore drill or runbook
+#   - No pre-flight validator (wrong pooler = cryptic pg_dump error)
+#   - No checksum validation, no alerts, no watchdog bonus
+#   - No Storage backup guidance
+#
+# Why free? Supabase Free has no automated backups, and a basic weekly
+# dump is a 30-line workflow. If this lite version saves your data once,
+# consider the paid kit for encryption + proof that restores work.
+#
+# SETUP (10 minutes):
+#   1. Use a PRIVATE repo. GitHub disables scheduled workflows in public
+#      repos after 60 days without activity — silently.
+#   2. Create an R2 bucket + API token (Object Read/Write on that bucket).
+#   3. Copy the SESSION pooler string from Supabase Dashboard > Settings >
+#      Database > Connection string (port 5432, host
+#      aws-0-<region>.pooler.supabase.com). NOT port 6543, NOT the direct
+#      host db.<ref>.supabase.co (IPv6-only; GitHub runners are IPv4-only).
+#   4. Add repo secrets: SUPABASE_DB_URL, R2_ACCOUNT_ID,
+#      R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET.
+#   5. Copy THIS folder's files to your repo root (or use it as its own
+#      repo — workflows in a subfolder do NOT run on their own).
+#   6. Actions > Supabase Backup (Lite) > Run workflow. Check R2.
+#
+# EGRESS WARNING: every dump pulls the full DB out of Supabase against
+# the Free 5 GB/month cap. A 500 MB DB dumped weekly is ~2 GB/month
+# (fine); dumped daily it is ~15 GB/month (over the cap). Keep it weekly.
+#
+# SCOPE: database only. auth.users IS included (it lives in the DB).
+# Storage files are NOT included — they live in S3, not Postgres.
+
+name: Supabase Backup (Lite)
+
+on:
+  schedule:
+    # Weekly, Sundays 03:42 UTC. ("42 3 * * *" would be DAILY — don't use it.)
+    - cron: "42 3 * * 0"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Install PostgreSQL client and AWS CLI
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-client awscli
+
+      - name: Dump and upload to R2
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: bash scripts/backup-lite.sh
