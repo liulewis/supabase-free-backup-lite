@@ -60,7 +60,15 @@ jobs:
         run: |
           set -euo pipefail
           sudo apt-get update -qq
-          sudo apt-get install -y -qq postgresql-client awscli
+          sudo apt-get install -y -qq curl ca-certificates gnupg
+          # postgresql-client-17 is NOT in Ubuntu's default repos (the
+          # runner ships PG 16 at most, which cannot dump a PG 17 server)
+          # — add PostgreSQL's official repo.
+          curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo gpg --dearmor -o /usr/share/keyrings/postgresql.gpg
+          . /etc/os-release
+          echo "deb [signed-by=/usr/share/keyrings/postgresql.gpg] https://apt.postgresql.org/pub/repos/apt ${VERSION_CODENAME}-pgdg main" | sudo tee /etc/apt/sources.list.d/pgdg.list
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-client-17 awscli
 
       - name: Dump and upload to R2
         env:
