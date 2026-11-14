@@ -48,3 +48,5 @@ pre-flight validator that rejects the wrong pooler with a clear error,
 SHA-256 + `pg_restore --list` validation, a restore drill into a
 throwaway Postgres with a step-by-step runbook, failure alerts, the
 cron-watchdog bonus, and an egress calculator.
+
+Get it here: https://franklinlewis7.gumroad.com/l/jispyu — $29 launch (first 50 buyers), then $39, one-time, 14-day money-back guarantee.
