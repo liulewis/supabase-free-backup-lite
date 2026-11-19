@@ -34,6 +34,11 @@ Every dump pulls the full database out of Supabase against the Free
 **5 GB/month cap**. A 500 MB database dumped weekly is ~2 GB/month
 (fine); dumped daily it is ~15 GB/month (over the cap). Keep it weekly.
 
+**Check your own numbers:** the free
+[Supabase Backup Planner](https://supabase-backup-planner.orkestr.run/)
+estimates your dump size, monthly egress and retention storage for any
+database size and schedule.
+
 ## Scope
 
 - ✅ Full database, including `auth.users` (they live in the database).
